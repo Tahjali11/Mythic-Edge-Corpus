@@ -1,0 +1,29 @@
+{
+  "object": "mythic_edge_corpus_session_ledger",
+  "schema_version": "mythic_edge_corpus_session_ledger.v1",
+  "ledger_id": "mythic-edge-corpus-preview-bootstrap-ledger",
+  "entries": [
+    {
+      "session_id": "bootstrap-public-session-v1",
+      "paths": [
+        "corpus/sessions/bootstrap_public_session.json"
+      ],
+      "source_kind": "synthetic_public_metadata",
+      "public_safe": true,
+      "non_claims": [
+        "not_parser_truth",
+        "not_fixture_promotion",
+        "not_corpus_readiness",
+        "not_release_readiness",
+        "not_deploy_readiness",
+        "not_production_readiness",
+        "not_analytics_truth",
+        "not_ai_truth",
+        "not_coaching_truth",
+        "not_privacy_assurance",
+        "not_security_assurance",
+        "not_full_corpus_parity"
+      ]
+    }
+  ]
+}

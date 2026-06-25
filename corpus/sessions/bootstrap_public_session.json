@@ -1,0 +1,23 @@
+{
+  "object": "mythic_edge_public_corpus_preview_fixture",
+  "schema_version": "mythic_edge_public_corpus_preview_fixture.v1",
+  "fixture_id": "bootstrap_public_session_v1",
+  "source_kind": "synthetic_public_metadata",
+  "description": "Tiny public-safe metadata for exercising the local package preview command.",
+  "contains_raw_log": false,
+  "contains_private_data": false,
+  "non_claims": [
+    "not_parser_truth",
+    "not_fixture_promotion",
+    "not_corpus_readiness",
+    "not_release_readiness",
+    "not_deploy_readiness",
+    "not_production_readiness",
+    "not_analytics_truth",
+    "not_ai_truth",
+    "not_coaching_truth",
+    "not_privacy_assurance",
+    "not_security_assurance",
+    "not_full_corpus_parity"
+  ]
+}
