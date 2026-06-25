@@ -1,0 +1,48 @@
+{
+  "object": "mythic_edge_corpus_package_manifest",
+  "schema_version": "mythic_edge_corpus_package_manifest.v1",
+  "package_id": "mythic-edge-corpus-preview-bootstrap",
+  "package_version": "0.0.0-preview",
+  "package_root": "corpus",
+  "safety_policy_version": "corpus_local_package_preview.v1",
+  "entries": [
+    {
+      "path": "corpus/README.md",
+      "role": "package_notes",
+      "public_safe": true,
+      "session_id": null
+    },
+    {
+      "path": "corpus/manifest.v1.json",
+      "role": "package_manifest",
+      "public_safe": true,
+      "session_id": null
+    },
+    {
+      "path": "corpus/session_ledger.v1.json",
+      "role": "session_ledger",
+      "public_safe": true,
+      "session_id": null
+    },
+    {
+      "path": "corpus/sessions/bootstrap_public_session.json",
+      "role": "public_safe_synthetic_session_metadata",
+      "public_safe": true,
+      "session_id": "bootstrap-public-session-v1"
+    }
+  ],
+  "non_claims": [
+    "not_parser_truth",
+    "not_fixture_promotion",
+    "not_corpus_readiness",
+    "not_release_readiness",
+    "not_deploy_readiness",
+    "not_production_readiness",
+    "not_analytics_truth",
+    "not_ai_truth",
+    "not_coaching_truth",
+    "not_privacy_assurance",
+    "not_security_assurance",
+    "not_full_corpus_parity"
+  ]
+}
