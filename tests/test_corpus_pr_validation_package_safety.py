@@ -359,6 +359,38 @@ class CorpusPrValidationPackageSafetyTests(unittest.TestCase):
         self.assertEqual(report["changed_package_files"], [])
         self.assertNotIn(forbidden, rendered)
 
+    def test_preview_output_inventory_paths_outside_package_root_fail_closed(self) -> None:
+        module = load_module("corpus_pr_validation_preview_inventory_root_test")
+
+        report = build_report(
+            module,
+            ROOT,
+            preview_builder=lambda **_kwargs: {
+                "object": module.PREVIEW_OBJECT,
+                "schema_version": module.PREVIEW_SCHEMA_VERSION,
+                "status": module.PREVIEW_PASSED_STATUS,
+                "package_id": "test-package",
+                "package_version": "0.0.0-test",
+                "inventory": [
+                    {"path": "corpus/README.md", "session_id": None},
+                    {"path": "docs/outside-package.json", "session_id": None},
+                ],
+                "summary": {
+                    "total_declared_manifest_entries": 2,
+                    "total_session_ledger_entries": 0,
+                },
+                "blocked_reason_codes": [],
+            },
+        )
+
+        self.assertEqual(report["status"], "blocked_preview_invalid_output")
+        self.assertEqual(
+            report["blocked_reason_codes"],
+            ["preview_inventory_path_outside_package_root"],
+        )
+        self.assertEqual(report["changed_package_files"], [])
+        self.assertEqual(report["inventory_summary"]["paths"], [])
+
     def test_preview_output_session_ids_and_summary_counts_fail_closed_without_echo(self) -> None:
         module = load_module("corpus_pr_validation_preview_summary_sanitized_test")
         forbidden = "/" + "Users" + "/example/" + "credential"

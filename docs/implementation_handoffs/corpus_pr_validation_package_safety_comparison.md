@@ -47,11 +47,11 @@ Current repo state already had the issue #14 local package preview command. This
 
 ## Validation Run
 
-- `python3 -m pytest -q tests/test_corpus_pr_validation_package_safety.py` passed: 13 tests after Codex D rebound regression coverage.
-- `python3 -m pytest -q tests/test_corpus_package_preview.py tests/test_corpus_pr_validation_package_safety.py` passed: 25 tests after Codex D rebound regression coverage.
+- `python3 -m pytest -q tests/test_corpus_pr_validation_package_safety.py` passed: 14 tests after Codex D E-002 regression coverage.
+- `python3 -m pytest -q tests/test_corpus_package_preview.py tests/test_corpus_pr_validation_package_safety.py` passed: 26 tests after Codex D E-002 regression coverage.
 - `python3 tools/corpus_pr_validate_package_safety.py --base-ref origin/main --head-ref HEAD --package-root corpus --manifest corpus/manifest.v1.json --session-ledger corpus/session_ledger.v1.json` passed with `passed_report_only`.
 - `python3 tools/corpus_pr_validate_package_safety.py --base-ref origin/main --head-ref HEAD --package-root corpus --manifest corpus/manifest.v1.json --session-ledger corpus/session_ledger.v1.json --format json` passed with `passed_report_only`.
-- `python3 -m pytest -q` passed: 25 tests after Codex D rebound regression coverage.
+- `python3 -m pytest -q` passed: 26 tests after Codex D E-002 regression coverage.
 - `python3 -m ruff check tools tests` passed.
 - `python3 -m py_compile tools/corpus_pr_validate_package_safety.py tests/test_corpus_pr_validation_package_safety.py` passed.
 - `python3 -m json.tool corpus/manifest.v1.json >/dev/null` passed.
@@ -85,6 +85,29 @@ The fix does not create package artifacts, publish releases, send
 `Tahjali11/Mythic-Edge`, auto-sanitize contributor branches, or claim parser
 truth, fixture promotion, corpus readiness, privacy assurance, or security
 assurance.
+
+## Codex D E-002 Fixer Addendum
+
+Codex D addressed `CORPUS-PRVAL-E-002`: preview inventory paths could be
+repo-relative and public-looking while still pointing outside the requested
+package root.
+
+Fix applied:
+
+- preview inventory path validation now checks each sanitized preview path
+  against the requested package root;
+- a preview inventory path outside the package root fails closed as
+  `blocked_preview_invalid_output` with
+  `preview_inventory_path_outside_package_root`;
+- the blocked report does not copy the outside-root path into
+  `changed_package_files` or inventory summaries;
+- focused regression coverage proves a passed preview containing
+  `docs/outside-package.json` is rejected before the PR validation report can
+  pass.
+
+The fix preserves the existing no-write, no-package-artifact, no-release,
+no-dispatch, no-ratchet, no-baseline-PR, no-Mythic-Edge-mutation, and
+non-readiness boundaries.
 
 ## Remaining Risks
 

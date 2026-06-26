@@ -193,7 +193,7 @@ def build_validation_report(
 
     invalid_reason = _validate_preview_shape(preview_report)
     if invalid_reason is None:
-        invalid_reason = _validate_preview_public_safe_values(preview_report)
+        invalid_reason = _validate_preview_public_safe_values(preview_report, package_root)
     if invalid_reason:
         return _report(
             base_ref=base_ref,
@@ -399,7 +399,15 @@ def _validate_preview_shape(preview_report: Mapping[str, Any]) -> str | None:
     return None
 
 
-def _validate_preview_public_safe_values(preview_report: Mapping[str, Any]) -> str | None:
+def _validate_preview_public_safe_values(
+    preview_report: Mapping[str, Any],
+    package_root: str | Path,
+) -> str | None:
+    try:
+        package_rel = _clean_repo_relative_path(package_root)
+    except ValueError:
+        return "preview_package_root_unsafe"
+
     for field in ("package_id", "package_version"):
         value = preview_report.get(field)
         if value is not None and not _is_public_safe_preview_value(value):
@@ -417,8 +425,11 @@ def _validate_preview_public_safe_values(preview_report: Mapping[str, Any]) -> s
     for item in preview_report.get("inventory", []):
         if not isinstance(item, Mapping):
             return "preview_inventory_entry_not_object"
-        if _safe_preview_path(item.get("path")) == "invalid":
+        safe_path = _safe_preview_path(item.get("path"))
+        if safe_path == "invalid":
             return "preview_inventory_path_unsafe"
+        if not _is_preview_path_inside_package_root(safe_path, package_rel):
+            return "preview_inventory_path_outside_package_root"
         session_id = item.get("session_id")
         if session_id is not None and not _is_public_safe_preview_value(session_id):
             return "preview_inventory_session_id_unsafe"
@@ -556,6 +567,11 @@ def _safe_preview_path(value: Any) -> str:
         return _clean_repo_relative_path(value).as_posix()
     except ValueError:
         return "invalid"
+
+
+def _is_preview_path_inside_package_root(path: str, package_root: Path) -> bool:
+    package_text = package_root.as_posix()
+    return path == package_text or path.startswith(package_text + "/")
 
 
 def _safe_preview_reason(value: Any) -> str:
