@@ -43,14 +43,6 @@ def release_report() -> dict[str, Any]:
         dry_run=True,
         clean_worktree_confirmed=True,
     )
-    report["release_metadata"]["asset_checksums"] = [
-        {
-            "algorithm": "sha256",
-            "asset_name": asset["asset_name"],
-            "sha256": asset["sha256"],
-        }
-        for asset in report["planned_assets"]
-    ]
     return report
 
 
@@ -495,14 +487,14 @@ class CorpusRepositoryDispatchTests(unittest.TestCase):
         self.assertEqual(unexpected_role["blocked_reason_codes"], ["payload_schema_invalid"])
         self.assertIsNone(unexpected_role["payload"])
 
-    def test_release_metadata_checksums_must_reference_planned_assets(self) -> None:
+    def test_release_checksum_surfaces_must_match_their_scopes(self) -> None:
         module = load_module("corpus_repository_dispatch_metadata_checksum_match_test", DISPATCH_PATH)
         release = release_report()
         release["release_metadata"]["asset_checksums"] = release["release_metadata"]["asset_checksums"][:-1]
 
         missing = build_report(module, release)
         self.assertEqual(missing["status"], "blocked_release_validation_failed")
-        self.assertEqual(missing["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertEqual(missing["blocked_reason_codes"], ["missing_checksum_asset"])
         self.assertIsNone(missing["payload"])
 
         release = release_report()
@@ -532,6 +524,42 @@ class CorpusRepositoryDispatchTests(unittest.TestCase):
         self.assertEqual(mismatch["status"], "blocked_release_validation_failed")
         self.assertEqual(mismatch["blocked_reason_codes"], ["checksum_mismatch"])
         self.assertIsNone(mismatch["payload"])
+
+        release = release_report()
+        release["planned_asset_checksums"] = release["planned_asset_checksums"][:-1]
+
+        missing_planned = build_report(module, release)
+        self.assertEqual(missing_planned["status"], "blocked_release_validation_failed")
+        self.assertEqual(missing_planned["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertIsNone(missing_planned["payload"])
+
+        release = release_report()
+        release["planned_asset_checksums"].append(dict(release["planned_asset_checksums"][0]))
+
+        duplicate_planned = build_report(module, release)
+        self.assertEqual(duplicate_planned["status"], "blocked_release_validation_failed")
+        self.assertEqual(duplicate_planned["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertIsNone(duplicate_planned["payload"])
+
+        release = release_report()
+        release["planned_asset_checksums"].append(
+            {
+                "algorithm": "sha256",
+                "asset_name": "mythic-edge-corpus-extra.txt",
+                "sha256": "1" * 64,
+            }
+        )
+        extra_planned = build_report(module, release)
+        self.assertEqual(extra_planned["status"], "blocked_release_validation_failed")
+        self.assertEqual(extra_planned["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertIsNone(extra_planned["payload"])
+
+        release = release_report()
+        release["planned_asset_checksums"][0]["sha256"] = "2" * 64
+        mismatch_planned = build_report(module, release)
+        self.assertEqual(mismatch_planned["status"], "blocked_release_validation_failed")
+        self.assertEqual(mismatch_planned["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertIsNone(mismatch_planned["payload"])
 
     def test_no_write_guard_extra_keys_fail_closed(self) -> None:
         module = load_module("corpus_repository_dispatch_no_write_guard_key_test", DISPATCH_PATH)

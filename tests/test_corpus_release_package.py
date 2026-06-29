@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -143,6 +144,33 @@ class CorpusReleasePackageTests(unittest.TestCase):
         self.assertEqual(report["included_files_summary"]["total_included_files"], 4)
         self.assertEqual([asset["written"] for asset in report["planned_assets"]], [False, False, False])
         self.assertEqual([asset["published"] for asset in report["planned_assets"]], [False, False, False])
+        archive_asset = next(asset for asset in report["planned_assets"] if asset["role"] == "package_archive")
+        metadata_asset = next(asset for asset in report["planned_assets"] if asset["role"] == "release_metadata")
+        final_metadata_bytes = (json.dumps(report["release_metadata"], indent=2, sort_keys=True) + "\n").encode(
+            "utf-8",
+        )
+        self.assertEqual(metadata_asset["sha256"], hashlib.sha256(final_metadata_bytes).hexdigest())
+        self.assertEqual(
+            report["release_metadata"]["asset_checksums"],
+            [
+                {
+                    "algorithm": "sha256",
+                    "asset_name": archive_asset["asset_name"],
+                    "sha256": archive_asset["sha256"],
+                }
+            ],
+        )
+        self.assertEqual(
+            report["planned_asset_checksums"],
+            [
+                {
+                    "algorithm": "sha256",
+                    "asset_name": asset["asset_name"],
+                    "sha256": asset["sha256"],
+                }
+                for asset in report["planned_assets"]
+            ],
+        )
         self.assertTrue(all(value is False for value in report["no_write_guards"].values()))
         self.assertIn("not_parser_truth", report["non_claims"])
         self.assertNotIn(str(ROOT), rendered)

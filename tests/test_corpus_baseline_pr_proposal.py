@@ -48,14 +48,6 @@ def release_report() -> dict[str, Any]:
         dry_run=True,
         clean_worktree_confirmed=True,
     )
-    report["release_metadata"]["asset_checksums"] = [
-        {
-            "algorithm": "sha256",
-            "asset_name": asset["asset_name"],
-            "sha256": asset["sha256"],
-        }
-        for asset in report["planned_assets"]
-    ]
     return report
 
 

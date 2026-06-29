@@ -47,14 +47,6 @@ def release_report() -> dict[str, Any]:
         dry_run=True,
         clean_worktree_confirmed=True,
     )
-    report["release_metadata"]["asset_checksums"] = [
-        {
-            "algorithm": "sha256",
-            "asset_name": asset["asset_name"],
-            "sha256": asset["sha256"],
-        }
-        for asset in report["planned_assets"]
-    ]
     return report
 
 
@@ -376,7 +368,7 @@ class CorpusRatchetComparisonReportTests(unittest.TestCase):
                 self.assertEqual(report["comparison_status"], "blocked_missing_release_metadata")
                 self.assertEqual(report["blocked_reason_codes"], ["missing_release_metadata"])
 
-    def test_release_metadata_checksums_must_match_planned_assets_exactly(self) -> None:
+    def test_release_checksum_surfaces_must_match_their_scopes(self) -> None:
         module = load_module("corpus_ratchet_metadata_checksum_test", RATCHET_PATH)
 
         release = release_report()
@@ -388,8 +380,8 @@ class CorpusRatchetComparisonReportTests(unittest.TestCase):
         release = release_report()
         release["release_metadata"]["asset_checksums"].pop()
         missing = build_report(module, release=release)
-        self.assertEqual(missing["comparison_status"], "blocked_checksum_mismatch")
-        self.assertEqual(missing["blocked_reason_codes"], ["checksum_mismatch"])
+        self.assertEqual(missing["comparison_status"], "blocked_missing_checksum")
+        self.assertEqual(missing["blocked_reason_codes"], ["missing_checksum_asset"])
 
         release = release_report()
         release["release_metadata"]["asset_checksums"].append(
@@ -404,6 +396,32 @@ class CorpusRatchetComparisonReportTests(unittest.TestCase):
         empty = build_report(module, release=release)
         self.assertEqual(empty["comparison_status"], "blocked_missing_checksum")
         self.assertEqual(empty["blocked_reason_codes"], ["missing_checksum_asset"])
+
+        release = release_report()
+        release["planned_asset_checksums"][0]["sha256"] = "0" * 64
+        planned_mismatch = build_report(module, release=release)
+        self.assertEqual(planned_mismatch["comparison_status"], "blocked_checksum_mismatch")
+        self.assertEqual(planned_mismatch["blocked_reason_codes"], ["checksum_mismatch"])
+
+        release = release_report()
+        release["planned_asset_checksums"].pop()
+        planned_missing = build_report(module, release=release)
+        self.assertEqual(planned_missing["comparison_status"], "blocked_checksum_mismatch")
+        self.assertEqual(planned_missing["blocked_reason_codes"], ["checksum_mismatch"])
+
+        release = release_report()
+        release["planned_asset_checksums"].append(
+            copy.deepcopy(release["planned_asset_checksums"][0])
+        )
+        planned_duplicate = build_report(module, release=release)
+        self.assertEqual(planned_duplicate["comparison_status"], "blocked_checksum_mismatch")
+        self.assertEqual(planned_duplicate["blocked_reason_codes"], ["checksum_mismatch"])
+
+        release = release_report()
+        release["planned_asset_checksums"] = []
+        planned_empty = build_report(module, release=release)
+        self.assertEqual(planned_empty["comparison_status"], "blocked_missing_checksum")
+        self.assertEqual(planned_empty["blocked_reason_codes"], ["missing_checksum_asset"])
 
     def test_asset_checksum_verification_must_be_literal_true(self) -> None:
         module = load_module("corpus_ratchet_literal_checksum_verified_test", RATCHET_PATH)
