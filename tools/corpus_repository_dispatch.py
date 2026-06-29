@@ -136,6 +136,7 @@ RELEASE_REPORT_KEYS = {
     "package_id",
     "package_preview_ref",
     "package_version",
+    "planned_asset_checksums",
     "planned_assets",
     "pr_validation_ref",
     "publish_requested",
@@ -575,6 +576,14 @@ def _validate_release_report(report: Mapping[str, Any]) -> str | None:
     }
     checksum_problem = _validate_release_metadata_checksums(
         release_metadata.get("asset_checksums"),
+        required_checksums={
+            str(assets["package_archive"]["asset_name"]): str(assets["package_archive"]["sha256"])
+        },
+    )
+    if checksum_problem:
+        return checksum_problem
+    checksum_problem = _validate_release_metadata_checksums(
+        report.get("planned_asset_checksums"),
         required_checksums=planned_checksums,
     )
     if checksum_problem:

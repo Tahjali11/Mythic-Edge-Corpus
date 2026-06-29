@@ -147,6 +147,7 @@ RELEASE_REPORT_KEYS = {
     "package_id",
     "package_preview_ref",
     "package_version",
+    "planned_asset_checksums",
     "planned_assets",
     "pr_validation_ref",
     "publish_requested",
@@ -596,6 +597,12 @@ def _validate_release_report(report: Mapping[str, Any]) -> str | None:
         return "report_schema_invalid"
     checksum_problem = _validate_release_metadata_checksums(
         release_metadata.get("asset_checksums"),
+        required_checksums=_non_self_referential_asset_checksums(report.get("planned_assets")),
+    )
+    if checksum_problem:
+        return checksum_problem
+    checksum_problem = _validate_release_metadata_checksums(
+        report.get("planned_asset_checksums"),
         required_checksums=_planned_asset_checksums(report.get("planned_assets")),
     )
     if checksum_problem:
@@ -881,6 +888,21 @@ def _planned_asset_checksums(value: Any) -> dict[str, str]:
     checksums: dict[str, str] = {}
     for item in value:
         if isinstance(item, Mapping) and _is_asset_name(item.get("asset_name")) and _is_sha256(item.get("sha256")):
+            checksums[str(item["asset_name"])] = str(item["sha256"])
+    return checksums
+
+
+def _non_self_referential_asset_checksums(value: Any) -> dict[str, str]:
+    if not isinstance(value, list):
+        return {}
+    checksums: dict[str, str] = {}
+    for item in value:
+        if (
+            isinstance(item, Mapping)
+            and item.get("role") == "package_archive"
+            and _is_asset_name(item.get("asset_name"))
+            and _is_sha256(item.get("sha256"))
+        ):
             checksums[str(item["asset_name"])] = str(item["sha256"])
     return checksums
 

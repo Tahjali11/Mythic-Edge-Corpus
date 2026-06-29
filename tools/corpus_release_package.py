@@ -412,10 +412,11 @@ def build_release_report(
         archive_checksum=archive_checksum,
     )
     metadata_bytes = _json_bytes(release_metadata)
+    metadata_checksum = _sha256(metadata_bytes)
     checksums_text = _checksums_text(
         (
             (asset_names["archive"], archive_checksum),
-            (asset_names["metadata"], _sha256(metadata_bytes)),
+            (asset_names["metadata"], metadata_checksum),
         )
     )
     planned_assets = [
@@ -423,6 +424,7 @@ def build_release_report(
         _asset(asset_names["metadata"], "release_metadata", metadata_bytes),
         _asset(asset_names["checksums"], "checksum_manifest", checksums_text.encode("utf-8")),
     ]
+    planned_asset_checksums = _asset_checksum_entries(planned_assets)
     checksum_problem = _validate_expected_checksums(planned_assets, expected_asset_checksums or {})
     if checksum_problem:
         return _blocked_report(
@@ -468,6 +470,7 @@ def build_release_report(
         },
         "release_metadata": release_metadata,
         "planned_assets": planned_assets,
+        "planned_asset_checksums": planned_asset_checksums,
         "safety_checks": _safety_checks(failed=False),
         "blocked_reason_codes": [],
         "no_write_guards": dict(NO_WRITE_GUARDS),
@@ -927,6 +930,17 @@ def _asset(asset_name: str, role: str, payload: bytes) -> dict[str, Any]:
         "written": False,
         "published": False,
     }
+
+
+def _asset_checksum_entries(assets: Sequence[Mapping[str, Any]]) -> list[dict[str, str]]:
+    return [
+        {
+            "asset_name": str(asset["asset_name"]),
+            "algorithm": "sha256",
+            "sha256": str(asset["sha256"]),
+        }
+        for asset in assets
+    ]
 
 
 def _checksums_text(entries: Sequence[tuple[str, str]]) -> str:
